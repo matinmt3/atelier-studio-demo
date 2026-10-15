@@ -1,0 +1,14 @@
+{
+  "name": "atelier-studio-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "یک پروژهٔ مفهومی فارسی برای معرفی استودیوی طراحی، هویت برند و تجربهٔ دیجیتال.",
+  "author": "Mohammad Matin Kharazmi",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "node scripts/serve.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
