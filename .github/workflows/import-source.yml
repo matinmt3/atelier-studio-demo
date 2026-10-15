@@ -1,0 +1,49 @@
+name: Import reviewed portfolio source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - source-bundle.zip
+      - .github/workflows/import-source.yml
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Verify and import reviewed source
+        env:
+          EXPECTED_SHA256: b5dcecc38c64d060223b65932dddaa3c21c27c6858a5a263197e44eda3913616
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, os, zipfile
+          source = Path('source-bundle.zip')
+          if not source.is_file():
+              raise SystemExit('Upload a reviewed source-bundle.zip before running this import.')
+          if hashlib.sha256(source.read_bytes()).hexdigest() != os.environ['EXPECTED_SHA256']:
+              raise SystemExit('Reviewed archive checksum does not match.')
+          root = Path.cwd().resolve()
+          with zipfile.ZipFile(source) as archive:
+              for item in archive.infolist():
+                  target = (root / item.filename).resolve()
+                  parts = Path(item.filename).parts
+                  if not target.is_relative_to(root) or '.git' in parts or item.filename.startswith('.github/workflows/'):
+                      raise SystemExit('Unexpected archive path: ' + item.filename)
+              archive.extractall(root)
+          source.unlink()
+          PY
+      - name: Commit independent project source
+        run: |
+          git config user.name 'Matin Kharazmi'
+          git config user.email '122116685+matinmt3@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: publish reviewed standalone portfolio source'
+          git push origin HEAD:${{ github.ref_name }}
